@@ -12,7 +12,7 @@
         }
     ],
     "bin": [
-        "bin/cloudtool"
+        "bin/ctool"
     ],
     "require": {
         "php": ">=7.2",
