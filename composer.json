@@ -17,6 +17,7 @@
     "require": {
         "php": ">=7.2",
         "ext-pcre": "*",
+        "text/template": "*",
         "phore/filesystem": "^1.0.3",
         "phore/system": "^1.0",
         "phore/log": "^1.0.2"
