@@ -1,0 +1,94 @@
+#!/usr/bin/php
+<?php
+namespace Phore;
+
+use Phore\Cli\CliController;
+use Phore\CloudTool\PhoreCloudTool;
+use Phore\Core\Helper\PhoreConsoleColor;
+use Psr\Log\LogLevel;
+
+if (is_dir(__DIR__ . "/../vendor")) {
+    require __DIR__ . "/../vendor/autoload.php";
+} else {
+    require __DIR__ . "/../../../autoload.php";
+}
+
+
+set_exception_handler(function ($ex) {
+    phore_log()->emergency("Error: " . $ex->getMessage() . " (add -v to see full exception)");
+
+    PhoreConsoleColor::SetColor("black", "red");
+    echo "\n";
+    echo "\n  " . implode(" ", $GLOBALS["argv"]);
+    echo "\n  Emergency: " . $ex->getMessage() . " (File: {$ex->getFile()}: Line: {$ex->getLine()}\n";
+    PhoreConsoleColor::Default();
+    echo "\n";
+
+    exit(254);
+});
+
+$opts = phore_getopt("hs", ["tpldir:", "target:", "onchange:", "autoload:", "debug", "watch"]);
+
+if ($opts->has("h") || $opts->has("help")) {
+    printHelp();
+    exit;
+}
+
+
+$templateDir =  $opts->get("tpldir", new \InvalidArgumentException("Parameter missing: --tpldir <path> is required parameter"));
+$targetDir =    $opts->get("target", new \InvalidArgumentException("Parameter missing: --target <path> is required parameter."));
+$onChange =    $opts->get("onchange", null);
+$watch =        $opts->has("watch");
+$silent =       $opts->has("s");
+$debug =        $opts->has("debug");
+$autoload =     $opts->get("autoload", null);
+
+
+phore_log()->setLogLevel(LogLevel::NOTICE);
+if ($silent) {
+    phore_log()->setLogLevel(LogLevel::EMERGENCY);
+}
+if ($debug) {
+    phore_log()->setLogLevel(LogLevel::DEBUG);
+}
+
+if ($autoload !== null) {
+    phore_log("Loading autoload file '$autoload'");
+    require $autoload;
+}
+
+do {
+    $ct = new PhoreCloudTool($templateDir, $targetDir, phore_log());
+    $ct->parseRecursive();
+    if ($onChange !== null && $ct->isFileModified()) {
+        phore_log()->notice("Some files changed. Executing --onchange action: '$onChange'");
+        phore_exec($onChange);
+    }
+    if ($watch) {
+        sleep(2);
+    }
+} while ($watch);
+
+function printHelp(string $errorMsg=null)
+{
+    if ($errorMsg !== null)
+        $errorMsg .= "\nSee '" . $GLOBALS["argv"][0] . " --help'\n";
+    echo <<<EOT
+$errorMsg
+
+Usage: {$GLOBALS["argv"][0]} [OPTIONS] --tpldir path --target path
+
+Parse template files from 'tpldir' and copy changed ones to 'target'.
+
+Options:
+  -h, --help              Show Help and exit
+      --tpldir string     The template directory to read templates from (default: PWD)
+      --target string     The target directory (default: /)
+      --onchange string   Execute a script if any file was changed
+      --autoload string   Autoload php file on startup
+  -s                      Silent mode (don't output data except for errors)
+      --debug             Be very verbose (debugging). Overrides -s
+      --watch             Parse files if they change 
+
+EOT;
+}
