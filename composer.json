@@ -17,10 +17,9 @@
     "require": {
         "php": ">=7.2",
         "ext-pcre": "*",
-        "text/template": "dev-master",
-        "phore/filesystem": "dev-master",
-        "phore/system": "dev-master",
-        "phore/log": "dev-master"
+        "phore/filesystem": "^1.0.3",
+        "phore/system": "^1.0",
+        "phore/log": "^1.0.2"
     },
     "require-dev": {
 
@@ -29,6 +28,5 @@
         "psr-4": {
             "Phore\\CloudTool\\": "src/"
         }
-    },
-    "minimum-stability": "dev"
+    }
 }
